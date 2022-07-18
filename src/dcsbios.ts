@@ -48,7 +48,7 @@ class Client extends EventEmitter  {
 				const addr = this._socket.address();
 				console.log(`Socket listening on ${addr.address}:${addr.port}`);
 				this._socket.addMembership(this.options.address!);
-				this._socket.on('message', (msg: any, rinfo: any) => {
+				this._socket.on('message', (msg: any, rinfo: Object) => {
 					this._decode(msg);
 				})
 				resolve(true);
@@ -56,14 +56,43 @@ class Client extends EventEmitter  {
 		});
 	}
 	private _decode(buffer: Buffer): void {
-		const controlAddr: any = buffer.readUInt16LE();
-		const count: any = buffer.readUInt16LE();
-		
-		console.log(buffer.toString('hex'));
-		console.log(controlAddr, count);
+
+		/*
+		<Buffer 55 55 55 55
+		10 00 02 00 20 20 0e 04 04 00 31 2d 31 20 4a 04
+		02 00 18 dc b6 44 04 00 00 00 ff ff fa 44 02 00
+		ab 56 fe ff 02 00 c0 00>
+		*/
+
+		// 0x441c, 0x0003, 0
+
+		// Out 1c 44 02 00 29 64
+
+		const startAddr = 17436;
+		const mask = 3;
+		const shift = 0;
+
+		for (const pair of buffer.entries()) {
+			const index: number = pair[0] - 1;
+
+			if (pair[1] === 85) {
+				continue;
+			}
+
+			if (buffer.readUint16LE(index) === startAddr) {
+				const dataLength = buffer.readUInt16LE(index + 2);
+				console.log(`DataLength: ${dataLength}`);
+
+				const data = buffer.readUInt16LE(index + 4);
+				console.log(`Data: ${data & mask}`);
+
+				console.log(`Found! ${buffer.readUInt16LE((index - 2))}`);
+				console.log(buffer);
+				console.log(index);
+			}
+		}
+
 	}
 }
 
 const client = new Client();
-
-console.log(client.options);
