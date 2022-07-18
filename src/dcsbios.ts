@@ -69,8 +69,8 @@ class Client extends EventEmitter  {
 		// Out 1c 44 02 00 29 64
 
 		const startAddr = 17436;
-		const mask = 3;
-		const shift = 0;
+		const mask = 96;
+		const shift = 5;
 
 		for (const pair of buffer.entries()) {
 			const index: number = pair[0] - 1;
@@ -81,14 +81,10 @@ class Client extends EventEmitter  {
 
 			if (buffer.readUint16LE(index) === startAddr) {
 				const dataLength = buffer.readUInt16LE(index + 2);
-				console.log(`DataLength: ${dataLength}`);
+				//console.log(`DataLength: ${dataLength}`);
 
 				const data = buffer.readUInt16LE(index + 4);
-				console.log(`Data: ${data & mask}`);
-
-				console.log(`Found! ${buffer.readUInt16LE((index - 2))}`);
-				console.log(buffer);
-				console.log(index);
+				console.log(`Data: ${(data & mask) >> shift}`);
 			}
 		}
 
