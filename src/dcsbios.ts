@@ -1,15 +1,11 @@
 import { Socket } from "dgram";
-const dgram = require('node:dgram');
+const { dgram } = require('node:dgram');
 const { EventEmitter } = require('node:events');
 
 /** Interface for client options object
  *  @interface ClientOptions
  */
-interface ClientOptions {
-	address?: string;
-	sendPort?: number;
-	receivePort?: number;
-}
+interface ClientOptions { address?: string; sendPort?: number; receivePort?: number; }
 
 /** The main client for interacting 
  * @extends EventEmitter
@@ -42,6 +38,9 @@ class Client extends EventEmitter  {
 		socket.bind(this.options.receivePort);
 		return socket;
 	}
+	private _testEmit(): void {
+		this.emit('testing');
+	}
 	private _beginListen(): Promise<boolean> {
 		return new Promise((resolve, reject) => {
 			this._socket.on('listening', () => {
@@ -51,6 +50,7 @@ class Client extends EventEmitter  {
 				this._socket.on('message', (msg: any, rinfo: Object) => {
 					this._decode(msg);
 				})
+				this._testEmit();
 				resolve(true);
 			});
 		});
@@ -92,3 +92,9 @@ class Client extends EventEmitter  {
 }
 
 const client = new Client();
+
+client.on('testing', () => {
+	setImmediate(() => {
+		console.log('It has executed!');
+	});
+})
