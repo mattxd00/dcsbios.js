@@ -9,6 +9,33 @@ const f16ControlData = require('./F-16C_50.json');
  */
 interface ClientOptions { address?: string; sendPort?: number; receivePort?: number; }
 
+interface ControlInput {
+	description: string;
+	interface: string;
+	max_value?: number;
+}
+
+interface ControlOutput {
+	address: number;
+	description: string;
+	mask: number;
+	max_value: number;
+	shift_by: number;
+	suffix: string;
+	type: string;
+}
+
+interface TrackedAircraftControl {
+	category: string;
+	control_type: string;
+	description: string;
+	identifier: string;
+	inputs: ControlInput[];
+	momentary_positions: string;
+	outputs: ControlOutput[];
+	physical_variant: string;
+}
+
 /** 
  * The main client for interacting with DCS-BIOS.
  * @extends EventEmitter
@@ -29,19 +56,25 @@ class Client extends EventEmitter  {
 
 		Object.assign(this.options, options);
 
-		this._aircraftControlData = aircraftControlData;
-		console.log(aircraftControlData);
+		this._aircraftControlData = {};
+
+		for (const [key, value] of Object.entries(aircraftControlData)) {
+			Object.assign(this._aircraftControlData, value);
+		}
 
 		this._socket = this._createSocket();
 
 		this._trackedControls = [];
 
-		this.once('newListener', (event: any, listener: any) => {
-			this._trackedControls.push(event);
+		this.on('newListener', (event: any, listener: any) => {
+			this._aircraftControlData[event].outputs.forEach((output: any) => {
+				output.value = 0;
+			})
+			this._trackedControls.push(this._aircraftControlData[event]);
 		});
 
 		this._socket.on('message', (msg: Buffer) => {
-			this._decodeBuffer(msg);
+			this._decodeBuffer(msg)
 		});
 
 		this._beginListen();
@@ -75,41 +108,32 @@ class Client extends EventEmitter  {
 	 * @returns {void}
 	 */
 	private _decodeBuffer(buffer: Buffer): void {
-
 		/*
-		<Buffer 55 55 55 55
-		10 00 02 00 20 20 0e 04 04 00 31 2d 31 20 4a 04
-		02 00 18 dc b6 44 04 00 00 00 ff ff fa 44 02 00
-		ab 56 fe ff 02 00 c0 00>
-		0x441c, 0x0003, 0
-		Out 1c 44 02 00 29 64
+		const startAddr = trackedControlsDetails.outputs[0].address;
+		const mask = trackedControlsDetails.outputs[0].mask;
+		const shift = trackedControlsDetails.outputs[0].shift_by;
 		*/
-
-		const startAddr = 17436;
-		const mask = 96;
-		const shift = 5;
-
-		const controlInfo = this._parseAircraftControl()
-
 		for (const pair of buffer.entries()) {
 			const index: number = pair[0] - 1;
+			
+			if (pair[1] === 85) continue;
 
-			if (pair[1] === 85) {
-				continue;
-			}
+			for (const control of this._trackedControls) {
 
-			if (buffer.readUint16LE(index) === startAddr) {
-				const dataLength = buffer.readUInt16LE(index + 2);
-				//console.log(`DataLength: ${dataLength}`);
+				const addr = control.outputs[0].address;
+				const mask = control.outputs[0].mask;
+				const shift = control.outputs[0].shift_by;
 
-				const data = buffer.readUInt16LE(index + 4);
-				console.log(`Data: ${(data & mask) >> shift}`);
+				if (buffer.readUint16LE(index) === addr) {
+					// const dataLength = buffer.readUInt16LE(index + 2);
+					const data = ((buffer.readUInt16LE(index + 4) & mask) >> shift);
+					if (control.outputs[0].value != data) {
+						this.emit(control.identifier, data);
+						control.outputs[0].value = data;
+					}
+				}
 			}
 		}
-
-	}
-
-	private _parseAircraftControl(aircraftControl: string): Object {
 
 	}
 }
@@ -118,6 +142,18 @@ const client = new Client(f16ControlData);
 
 client.on('MAIN_PWR_SW', (newValue: number) => {
 	console.log('Power Switch Flicked. newVal: ', newValue);
+});
+
+client.on('FLCS_PWR_TEST_SW', (newValue: number) => {
+	console.log('FLCS Switch Flicked. newVal: ', newValue);
+});
+
+client.on('MASTER_ARM_SW', (newValue: number) => {
+	console.log('Master ARM Switch Flicked. newVal: ', newValue);
+});
+
+client.on('JFS_SW', (newValue: number) => {
+	console.log('STARTER Flickerd. newVal: ', newValue);
 });
 
 
