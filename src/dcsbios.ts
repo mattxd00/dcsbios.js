@@ -4,17 +4,30 @@ const { EventEmitter } = require('node:events');
 
 const f16ControlData = require('./F-16C_50.json');
 
-/** Interface for client options object
- *  @interface ClientOptions
+/**
+ * Interface for client options object
+ * @interface ClientOptions
  */
-interface ClientOptions { address?: string; sendPort?: number; receivePort?: number; }
+interface ClientOptions { 
+	address?: string;
+	sendPort?: number;
+	receivePort?: number;
+}
 
+/**
+ * Interface for ControlInput object
+ * @interface ControlInput
+ */
 interface ControlInput {
 	description: string;
 	interface: string;
 	max_value?: number;
 }
 
+/**
+ * Interface for ControlOutput object
+ * @interface ControlOutput
+ */
 interface ControlOutput {
 	address: number;
 	description: string;
@@ -25,6 +38,10 @@ interface ControlOutput {
 	type: string;
 }
 
+/**
+ * Interface for TrackedAircraftControl
+ * @interface TrackedAircraftControl
+ */
 interface TrackedAircraftControl {
 	category: string;
 	control_type: string;
