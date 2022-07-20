@@ -108,11 +108,6 @@ class Client extends EventEmitter  {
 	 * @returns {void}
 	 */
 	private _decodeBuffer(buffer: Buffer): void {
-		/*
-		const startAddr = trackedControlsDetails.outputs[0].address;
-		const mask = trackedControlsDetails.outputs[0].mask;
-		const shift = trackedControlsDetails.outputs[0].shift_by;
-		*/
 		for (const pair of buffer.entries()) {
 			const index: number = pair[0] - 1;
 			
@@ -138,6 +133,8 @@ class Client extends EventEmitter  {
 	}
 }
 
+// Tests
+
 const client = new Client(f16ControlData);
 
 client.on('MAIN_PWR_SW', (newValue: number) => {
@@ -155,13 +152,3 @@ client.on('MASTER_ARM_SW', (newValue: number) => {
 client.on('JFS_SW', (newValue: number) => {
 	console.log('STARTER Flickerd. newVal: ', newValue);
 });
-
-
-
-/*
-client.on('testing', () => {
-	setImmediate(() => {
-		console.log('It has executed!');
-	});
-})
-*/
